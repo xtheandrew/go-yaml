@@ -204,6 +204,10 @@ func unmarshal(in []byte, out interface{}, strict bool) (err error) {
 //                  they were part of the outer struct. For maps, keys must
 //                  not conflict with the yaml keys of other struct fields.
 //
+//	   hex          Format value as hexadecimal (for integer types only)
+//
+//	   oct          Format value as octal (for integer types only)
+//
 // In addition, if the key is "-", the field is ignored.
 //
 // For example:
@@ -502,11 +506,20 @@ type structInfo struct {
 	InlineUnmarshalers [][]int
 }
 
+type IntBase uint32
+
+const (
+	Decimal IntBase = 1 << iota
+	Hexadecimal
+	Octal
+)
+
 type fieldInfo struct {
 	Key       string
 	Num       int
 	OmitEmpty bool
 	Flow      bool
+	IntBase   IntBase
 	// Id holds the unique field identifier, so we can cheaply
 	// check for field duplicates without maintaining an extra map.
 	Id int
@@ -562,6 +575,10 @@ func getStructInfo(st reflect.Type) (*structInfo, error) {
 					info.OmitEmpty = true
 				case "flow":
 					info.Flow = true
+				case "hex":
+					info.IntBase = Hexadecimal
+				case "oct":
+					info.IntBase = Octal
 				case "inline":
 					inline = true
 				default:

@@ -274,6 +274,22 @@ var marshalTests = []struct {
 		"a: \"b\\nc\"\n",
 	},
 
+	// Integer format Tag
+	{
+		&struct {
+			A uint `yaml:"a"`
+		    B int  `yaml:"b"`
+		    C int  `yaml:"c"`
+		    D uint `yaml:"d,hex"`
+		    E int  `yaml:"e,hex"`
+		    F int  `yaml:"f,hex"`
+		    G uint `yaml:"g,oct"`
+		    H int  `yaml:"h,oct"`
+		    I int  `yaml:"i,oct"`
+		}{100, 100, -100, 100, 100, -100, 100, 100, -100},
+		"a: 100\nb: 100\nc: -100\nd: 0x64\ne: 0x64\nf: -0x64\ng: 0o144\nh: 0o144\ni: -0o144\n",
+	},
+
 	// Unexported field
 	{
 		&struct {

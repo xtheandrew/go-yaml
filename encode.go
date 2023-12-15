@@ -33,6 +33,7 @@ type encoder struct {
 	event    yaml_event_t
 	out      []byte
 	flow     bool
+	intbase  IntBase
 	indent   int
 	doneInit bool
 }
@@ -232,7 +233,9 @@ func (e *encoder) structv(tag string, in reflect.Value) {
 			}
 			e.marshal("", reflect.ValueOf(info.Key))
 			e.flow = info.Flow
+			e.intbase = info.IntBase
 			e.marshal("", value)
+			e.intbase = Decimal
 		}
 		if sinfo.InlineMap >= 0 {
 			m := in.Field(sinfo.InlineMap)
@@ -373,13 +376,45 @@ func (e *encoder) boolv(tag string, in reflect.Value) {
 }
 
 func (e *encoder) intv(tag string, in reflect.Value) {
-	s := strconv.FormatInt(in.Int(), 10)
-	e.emitScalar(s, "", tag, yaml_PLAIN_SCALAR_STYLE, nil, nil, nil, nil)
+	var base int
+	var prefix string
+	var value string
+	switch e.intbase {
+	case Hexadecimal:
+		base = 16
+		prefix = "0x"
+	case Octal:
+		base = 8
+		prefix = "0o"
+	default:
+		base = 10
+		prefix = ""
+	}
+	s := strconv.FormatInt(in.Int(), base)
+	if (s[0] == '-') {
+		value = "-" + prefix + s[1:]
+	} else {
+		value = prefix + s
+	}
+	e.emitScalar(value, "", tag, yaml_PLAIN_SCALAR_STYLE, nil, nil, nil, nil)
 }
 
 func (e *encoder) uintv(tag string, in reflect.Value) {
-	s := strconv.FormatUint(in.Uint(), 10)
-	e.emitScalar(s, "", tag, yaml_PLAIN_SCALAR_STYLE, nil, nil, nil, nil)
+	var base int
+	var prefix string
+	switch e.intbase {
+	case Hexadecimal:
+		base = 16
+		prefix = "0x"
+	case Octal:
+		base = 8
+		prefix = "0o"
+	default:
+		base = 10
+		prefix = ""
+	}
+	s := strconv.FormatUint(in.Uint(), base)
+	e.emitScalar(prefix + s, "", tag, yaml_PLAIN_SCALAR_STYLE, nil, nil, nil, nil)
 }
 
 func (e *encoder) timev(tag string, in reflect.Value) {
